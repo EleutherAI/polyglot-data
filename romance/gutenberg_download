@@ -1,0 +1,18 @@
+.#!/bin/sh
+
+if test $# != 1
+then
+    echo "Download a Gutenberg dataset"
+    echo "Usage: $(basename $0) <lang> [<basedir>]"
+    exit 1
+fi
+
+LANG=$1
+BASEDIR=$2
+test "$BASEDIR" || BASEDIR=/fsx/polyglot_data/romance
+
+cd $BASEDIR/$LANG/0_raw
+mkdir -p gutenberg
+cd gutenberg
+wget -w 2 -m  -o gutenberg.log \
+  -H "http://www.gutenberg.org/robot/harvest?filetypes[]=txt&langs[]=$LANG"
