@@ -1,7 +1,6 @@
 mkdir balo
 cd balo
 wget https://echanges.dila.gouv.fr/OPENDATA/BALO/balo_20230102001.taz
-sleep 10
 wget https://echanges.dila.gouv.fr/OPENDATA/BALO/balo_20230102002.taz
 wget https://echanges.dila.gouv.fr/OPENDATA/BALO/balo_20230102003.taz
 wget https://echanges.dila.gouv.fr/OPENDATA/BALO/balo_20230102004.taz
