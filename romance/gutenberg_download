@@ -1,18 +1,23 @@
-.#!/bin/sh
+#!/bin/sh
 
-if test $# != 1
+if test $# -lt 1 -o "$1" = "-h"
 then
     echo "Download a Gutenberg dataset"
     echo "Usage: $(basename $0) <lang> [<basedir>]"
     exit 1
 fi
 
-LANG=$1
-BASEDIR=$2
+LANG="$1"
+BASEDIR="$2"
 test "$BASEDIR" || BASEDIR=/fsx/polyglot_data/romance
 
-cd $BASEDIR/$LANG/0_raw
+DATADIR="${BASEDIR%/}/${LANG}/0_raw"
+test -d "$DATADIR" || mkdir -p "$DATADIR" || exit 1
+
+cd "$DATADIR" || exit 1
 mkdir -p gutenberg
 cd gutenberg
+
+echo "Downloading $LANG to $DATADIR/gutenberg"
 wget -w 2 -m  -o gutenberg.log \
   -H "http://www.gutenberg.org/robot/harvest?filetypes[]=txt&langs[]=$LANG"

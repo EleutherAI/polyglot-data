@@ -13,6 +13,7 @@ import zipfile
 import json
 import lzma
 import gzip
+import bz2
 from enum import Enum, auto
 import argparse
 from typing import Dict, List, Set
@@ -215,6 +216,9 @@ class BookParser:
 
     def __init__(self, language, book_encoding, dest, out_fmt, chunk_size: int,
                  multilang: bool):
+        """
+        initialize object
+        """
         self.language = language
         self.book_encoding = book_encoding
         self.dest = Path(dest)
@@ -222,32 +226,41 @@ class BookParser:
         self.size = chunk_size
         self.multilang = multilang
         self.meta = []
+        self.seen = set()
         if not self.dest.is_dir():
             self.dest.mkdir(parents=True)
 
 
     def add_book(self, book: Dict):
+        """
+        Add a book to the output
+        """
         num = len(self.meta) + 1
         if self.fmt == "jsonl":
-            outfile = self.dest / f"{num//self.size:02}.jsonl.gz"
-            with gzip.open(outfile, "at", encoding="utf-8") as fout:
+            outfile = self.dest / f"{num//self.size:02}.jsonl.bz2"
+            with bz2.open(outfile, "at", encoding="utf-8") as fout:
                 json.dump(book, fout, ensure_ascii=False)
+                print(file=fout)
             book.pop("text")
             book["file"] = str(outfile.name)
         else:
             outdir = self.dest / f"{num//self.size:02}"
             if not outdir.is_dir():
                 outdir.mkdir(parents=True)
-            mod = lzma if self.fmt == "xz" else gzip
+            mod = lzma if self.fmt == "xz" else bz2 if self.fmt == "bz2" else gzip
             outname = outdir / (Path(book["src"]).stem + ".txt." + self.fmt)
             with mod.open(outname, "wt", encoding="utf-8") as fout:
                 fout.write(book.pop("text"))
             book["file"] = str(outname.relative_to(outname.parents[2]))
 
         self.meta.append(book)
+        self.seen.add(book["id"])
 
 
     def iter_booksdir(self, orig: Path):
+        """
+        Iterate & recurse over a directory, fetching all books
+        """
         subd = []
         books = []
         for elem in orig.iterdir():
@@ -270,6 +283,8 @@ class BookParser:
 
             if not chosen:
                 log("Warning: no valid book for", elem)
+            elif chosen["id"] in self.seen:
+                log("Warning: repeated book", chosen["id"])
             else:
                 self.add_book(chosen)
 
@@ -318,8 +333,8 @@ def parse_args(args: List[str]) -> argparse.Namespace:
                     help="allow multi-language books")
     g1.add_argument("--chunk-size", type=int, default=100,
                     help="number of books to join together (default: %(default)d)")
-    g1.add_argument("--output-format", choices=("jsonl", "gz", "xz"),
-                    default="gz",
+    g1.add_argument("--output-format", choices=("jsonl", "gz", "xz", "bz2"),
+                    default="bz2",
                     help="book output format (default: %(default)s)")
     return parser.parse_args(args)
 

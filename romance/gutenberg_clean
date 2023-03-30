@@ -1,6 +1,6 @@
 #!/bin/sh
 
-if [ $# != 1 ]
+if [ $# -lt 1 -o "$1" = "-h" ]
 then
     echo "Clean a downloaded Gutenberg dataset"
     echo "Usage: $(basename $0) <lang> [<basedir>]"
@@ -9,11 +9,12 @@ fi
 
 THISDIR=$(dirname $(readlink -ef "$0"))
 
-LANG=$1
-BASEDIR=$2
+LANG="$1"
+BASEDIR="$2"
 test "$BASEDIR" || BASEDIR=/fsx/polyglot_data/romance
 
 cd $BASEDIR/$LANG
 python3.8 $THISDIR//gutenberg_books.py --lang $LANG \
   --output-format jsonl --chunk-size 200 \
-  0_raw/gutenberg 1_clean/gutenberg
+  0_raw/gutenberg \
+  2_clean/gutenberg
